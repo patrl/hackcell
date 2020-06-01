@@ -2,11 +2,14 @@
 
 module Main where
 
+import           Foreign.C.Types                ( CInt )
 import qualified SDL
-import SDL.Vect
+import           SDL.Vect
 import           Control.Concurrent             ( threadDelay )
 
+screenWidth :: CInt
 screenWidth = 800
+screenHeight :: CInt
 screenHeight = 600
 
 main :: IO ()
