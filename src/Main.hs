@@ -1,29 +1,84 @@
--- a toy brogue console
---
+-- reference: https://hackage.haskell.org/package/apecs-0.2.0.2/src/example/RTS.hs
 
+-- a toy brogue console
+
+-- apecs requires these:
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE FlexibleInstances #-}
+
+-- These are extra things we need.
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiWayIf #-}
 
 module Main where
 
-import SDL (($=))
+import           Apecs hiding ( ($=) )-- we're going to use this for our game logic
+import           SDL                            ( ($=) )
 import qualified SDL -- the main sdl2 bindings
 -- TODO figure out if juicypixels can replace this, although it's probably slower.
 import qualified SDL.Image                     as SDLImg -- necessary to load the brogue font
 -- import qualified SDL.Font                      as TTF
 import           SDL.Vect -- We need this for the vector constructors
-import           Control.Monad                  ( unless ) -- a handy utility for breaking a loop
-import           Foreign.C.Types                ( CInt,CFloat ) -- since we dealing with a C FFI library, we need to deal with C Integer types
+import           Control.Monad                  ( unless
+                                                , void
+                                                ) -- a handy utility for breaking a loop
+import           Data.Maybe                     ( fromMaybe )
+import           Foreign.C.Types                ( CInt
+                                                , CFloat
+                                                ) -- since we dealing with a C FFI library, we need to deal with C Integer types
 import           Data.Word                      ( Word8 ) -- RGBA colors are stored in this format
 import           Lens.Micro                     ( (^.) )
 import qualified Data.Vector                   as V
-import           Control.Concurrent             ( threadDelay )
+-- import           Control.Concurrent             ( threadDelay )
 import qualified Math.Geometry.Grid            as Grid
 import           Math.Geometry.Grid.Square
+import           Math.Geometry.Grid.SquareInternal
+                                                ( SquareDirection
+                                                  ( North
+                                                  , East
+                                                  , South
+                                                  , West
+                                                  )
+                                                )
+
+-- apecs stuff:
+
+newtype Position = Position (Int,Int) deriving Show
+instance Component Position where type Storage Position = Map Position
+
+data Player = Player deriving Show
+instance Component Player where type Storage Player = Unique Player
+
+makeWorld "World" [''Position, ''Player]
+
+type System' a = System World a
+
+playerPos :: (Int, Int)
+playerPos = (40, 30)
+
+initialize :: System' ()
+initialize = void $ newEntity (Player, Position playerPos)
+
+move :: Grid.Direction RectSquareGrid -> (Int, Int) -> (Int, Int)
+move dir initPos = fromMaybe initPos (Grid.neighbour screenGrid initPos dir)
+
+handleInput :: (SDL.Scancode -> Bool) -> System' ()
+handleInput kmap = if
+  | (kmap SDL.ScancodeUp) -> cmap $ \(Player, Position pos) -> Position (move North pos)
+  | (kmap SDL.ScancodeRight) -> cmap $ \(Player, Position pos) -> Position (move East pos)
+  | (kmap SDL.ScancodeDown) -> cmap $ \(Player, Position pos) -> Position (move South pos)
+  | (kmap SDL.ScancodeLeft) -> cmap $ \(Player, Position pos) -> Position (move West pos)
+  | otherwise -> return ()
 
 fontName :: FilePath
-fontName = "font-13.png"
+fontName = "cp437_20x20.png"
 
 -- directory where resources reside.
 resourceDir :: FilePath
@@ -51,7 +106,7 @@ _font13grid = V2 16 16
 
 -- TODO find out if there's a nice library for interfacing with RGBA data
 -- some handy color aliases
-black, white, _clearColor, dracBlack, dracRed, dracGreen :: V4 Word8
+black, white, _clearColor, dracBlack, dracRed, dracGreen, dracYellow :: V4 Word8
 black = V4 0 0 0 0
 white = V4 maxBound maxBound maxBound 0
 _clearColor = dracBlack
@@ -59,7 +114,7 @@ _clearColor = dracBlack
 dracBlack = V4 40 42 54 0
 dracRed = V4 maxBound 85 85 0
 dracGreen = V4 80 250 123 0
-dracYello = V4 241 250 140 0
+dracYellow = V4 241 250 140 0
 
 
 -- takes a texture atlas, together with the rows/columns, and returns an SDL surface
@@ -87,7 +142,7 @@ loadTextureFromSurface surface renderer = do
 mkRect :: V2 CInt -> V2 CInt -> SDL.Rectangle CInt
 mkRect p = SDL.Rectangle (P p)
 
--- takes some texture dimensions, and grid dimensions, and returns.
+-- takes some texture dimensions, and grid dimensions, and returns. 
 mkRects :: V2 CInt -> V2 CInt -> IO (V.Vector (SDL.Rectangle CInt))
 mkRects textDims gDims = do
   let cDims =
@@ -103,9 +158,8 @@ main = do
   SDL.initialize ([SDL.InitVideo] :: [SDL.InitFlag])
 
   -- load font, and get the dimensions of each tile
-  (atlasSurface, surfaceDims, tileDims) <- loadSurfaceWithTileDims
-    fontName
-    _font13grid
+  (atlasSurface, surfaceDims, tileDims) <- loadSurfaceWithTileDims fontName
+                                                                   _font13grid
   putStrLn $ "the dimensions of each tile are:" ++ show tileDims -- for debugging purposes
 
   -- compute the rectangles corresponding to each tile
@@ -118,30 +172,32 @@ main = do
                       , SDL.windowMode        = SDL.Fullscreen
                       } -- load a window -- the dimension is a multiple of tile size
 
-  renderer         <- SDL.createRenderer window (-1) SDL.defaultRenderer -- creates the rendering context
+  renderer      <- SDL.createRenderer window (-1) SDL.defaultRenderer -- creates the rendering context
 
-  _ <- SDL.rendererScale renderer $= scalingFactor
+  _             <- SDL.rendererScale renderer $= scalingFactor
 
-  _ <- SDL.rendererDrawColor renderer $= _clearColor
+  _             <- SDL.rendererDrawColor renderer $= _clearColor
 
-  brogueTexture    <- loadTextureFromSurface atlasSurface renderer
+  brogueTexture <- loadTextureFromSurface atlasSurface renderer
 
   let broguePrintChar charNum gridCoords = SDL.copy
         renderer
         brogueTexture
         (Just $ rects V.! charNum)
-        (Just $ screenGridIndexToRect gridCoords (tileDims))
+        (Just $ screenGridIndexToRect gridCoords tileDims)
 
   let
     loop = do
       events <- map SDL.eventPayload <$> SDL.pollEvents
       let quit = SDL.QuitEvent `elem` events
+      -- keyMap <- SDL.getKeyboardState
       _ <- SDL.rendererDrawColor renderer $= _clearColor
       SDL.clear renderer
-      broguePrintChar 16 (40,30)
-      -- _ <- SDL.rendererDrawColor renderer $= dracRed
-      -- _ <- SDL.fillRect renderer (Just $ screenGridIndexToRect (0,0) (tileDims * 8))
-      sequence_ [ broguePrintChar 16 coords | coords <- Grid.centre screenGrid ]
+      broguePrintChar 16 (40, 30)
+      _ <- SDL.rendererDrawColor renderer $= dracRed
+      _ <- SDL.fillRect renderer
+                        (Just $ screenGridIndexToRect (0, 0) (tileDims * 8))
+      -- sequence_ [ broguePrintChar 16 coords | coords <- Grid.centre screenGrid ]
       SDL.present renderer
       unless quit loop
   loop
