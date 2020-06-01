@@ -11,6 +11,7 @@ source-dirs: src
 dependencies:
 - { name: "base", version: '^>=4.13' }
 - { name: "sdl2", version: '^>=2.5.2.0' }
+- { name: "apecs", version: '^>=0.9.1' }
 - { name: "vector" }
 
 ghc-options: [-Wall,-threaded]
