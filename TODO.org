@@ -1,0 +1,14 @@
+* TODO
+
+** TODO add resources folder
+** Notes
+
+*** Interactive evaluation of arbitrary code via ~ghcid~.
+
+- In order to interactively evaluate comments of the following form:
+
+  #+BEGIN_SRC haskell
+-- $> code
+  #+END_SRC
+
+  Run ~ghcid --allow-eval~ in the root directory. This will automatically reload the file every time it changes, as well as running ~code~ and displaying the result.
