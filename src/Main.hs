@@ -23,7 +23,7 @@ import qualified Math.Geometry.Grid            as Grid
 import           Math.Geometry.Grid.Square
 
 fontName :: FilePath
-fontName = "font13.png"
+fontName = "font-13.png"
 
 -- directory where resources reside.
 resourceDir :: FilePath
