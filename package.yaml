@@ -3,14 +3,14 @@ name: hackcell
 author: Patrick D. Elliott
 maintainer: patrick.d.elliott@gmail.com
 version: 0.1.0.0
-license: BSD3
+license: null 
 
 build-type: Simple
 
 source-dirs: src
 dependencies:
 - { name: "base", version: '^>=4.13' }
-- { name: "sdl2", version: '2.5.2.0' }
+- { name: "sdl2", version: '^>=2.5.2.0' }
 - { name: "vector" }
 
 ghc-options: [-Wall,-threaded]
