@@ -139,9 +139,9 @@ main = do
       _ <- SDL.rendererDrawColor renderer $= _clearColor
       SDL.clear renderer
       broguePrintChar 16 (40,30)
-      _ <- SDL.rendererDrawColor renderer $= dracRed
-      _ <- SDL.fillRect renderer (Just $ screenGridIndexToRect (0,0) (tileDims * 8))
-      -- sequence_ [ broguePrintChar 16 coords | coords <- Grid.centre screenGrid ]
+      -- _ <- SDL.rendererDrawColor renderer $= dracRed
+      -- _ <- SDL.fillRect renderer (Just $ screenGridIndexToRect (0,0) (tileDims * 8))
+      sequence_ [ broguePrintChar 16 coords | coords <- Grid.centre screenGrid ]
       SDL.present renderer
       unless quit loop
   loop
