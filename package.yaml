@@ -8,7 +8,7 @@ license: null
 build-type: Simple
 
 data-dir: data
-source-dirs: src
+
 dependencies:
 - { name: "base", version: '^>=4.13' }
 - { name: "sdl2", version: '^>=2.5.2.0' }
@@ -20,6 +20,8 @@ dependencies:
 
 ghc-options: [-Wall,-threaded]
 # default-extensions:
-library: {}
+library:
+  source-dirs: src
 executable:
+  source-dirs: app
   main: Main.hs

@@ -169,7 +169,7 @@ main = do
     "SDL Tutorial"
     SDL.defaultWindow { SDL.windowInitialSize = screenDims * tileDims
                       , SDL.windowHighDPI     = True
-                      , SDL.windowMode        = SDL.Fullscreen
+                      , SDL.windowMode        = SDL.Windowed
                       } -- load a window -- the dimension is a multiple of tile size
 
   renderer      <- SDL.createRenderer window (-1) SDL.defaultRenderer -- creates the rendering context
@@ -193,11 +193,11 @@ main = do
       -- keyMap <- SDL.getKeyboardState
       _ <- SDL.rendererDrawColor renderer $= _clearColor
       SDL.clear renderer
-      broguePrintChar 16 (40, 30)
+      -- broguePrintChar 16 (40, 30)
+      sequence_ [ broguePrintChar 16 coords | coords <- Grid.centre screenGrid ]
       _ <- SDL.rendererDrawColor renderer $= dracRed
       _ <- SDL.fillRect renderer
                         (Just $ screenGridIndexToRect (0, 0) (tileDims * 8))
-      -- sequence_ [ broguePrintChar 16 coords | coords <- Grid.centre screenGrid ]
       SDL.present renderer
       unless quit loop
   loop
