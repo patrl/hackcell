@@ -1,21 +1,6 @@
--- reference: https://hackage.haskell.org/package/apecs-0.2.0.2/src/example/RTS.hs
-
--- a toy brogue console
-
--- apecs requires these:
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE FlexibleInstances #-}
-
 -- These are extra things we need.
+{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiWayIf #-}
 
 module Main where
 
